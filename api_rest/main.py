@@ -4,6 +4,9 @@ from fastapi import FastAPI, HTTPException, Query
 app = FastAPI()
 
 
+MEDIA_INCONNU = "Média introuvable"
+
+
 medias = [
 	{
 		"id": 1,
@@ -31,6 +34,22 @@ medias = [
 	},
 ]
 
+emprunts = []
+
+
+def trouver_media(media_id: int):
+	for media in medias:
+		if media["id"] == media_id:
+			return media
+	return None
+
+
+def trouver_emprunt(emprunt_id: int):
+	for emprunt in emprunts:
+		if emprunt["id"] == emprunt_id:
+			return emprunt
+	return None
+
 
 @app.get("/medias")
 def lire_medias(type: str | None = None, disponibilite: bool | None = Query(default=None)):
@@ -47,8 +66,45 @@ def lire_medias(type: str | None = None, disponibilite: bool | None = Query(defa
 
 @app.get("/medias/{media_id}")
 def lire_media(media_id: int):
-	for media in medias:
-		if media["id"] == media_id:
-			return media
+	media = trouver_media(media_id)
+	if media is not None:
+		return media
 
-	raise HTTPException(status_code=404, detail="Média introuvable")
+	raise HTTPException(status_code=404, detail=MEDIA_INCONNU)
+
+
+@app.post("/medias/{media_id}/emprunt")
+def emprunter_media(media_id: int):
+	media = trouver_media(media_id)
+	if media is None:
+		raise HTTPException(status_code=404, detail=MEDIA_INCONNU)
+
+	if not media["disponible"]:
+		raise HTTPException(status_code=409, detail="Média déjà emprunté")
+
+	media["disponible"] = False
+	emprunt = {
+		"id": len(emprunts) + 1,
+		"media_id": media_id,
+		"retourne": False,
+	}
+	emprunts.append(emprunt)
+	return emprunt
+
+
+@app.post("/emprunts/{emprunt_id}/retour")
+def retourner_emprunt(emprunt_id: int):
+	emprunt = trouver_emprunt(emprunt_id)
+	if emprunt is None:
+		raise HTTPException(status_code=404, detail="Emprunt introuvable")
+
+	if emprunt["retourne"]:
+		return emprunt
+
+	media = trouver_media(emprunt["media_id"])
+	if media is None:
+		raise HTTPException(status_code=404, detail=MEDIA_INCONNU)
+
+	media["disponible"] = True
+	emprunt["retourne"] = True
+	return emprunt
