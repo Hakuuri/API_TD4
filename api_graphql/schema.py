@@ -39,6 +39,13 @@ class Emprunt:
 
 
 @strawberry.type
+class Statistique:
+    media_id: int
+    titre: str
+    nombre_emprunts: int
+
+
+@strawberry.type
 class Query:
     @strawberry.field
     def medias(
@@ -55,6 +62,22 @@ class Query:
         if disponible is not None:
             resultat = [m for m in resultat if m["disponible"] == disponible]
         return [Media(**m) for m in resultat]
+
+    @strawberry.field
+    def statistiques(self) -> list[Statistique]:
+        compteur: dict[int, int] = {}
+        for emprunt in _emprunts:
+            mid = emprunt["media_id"]
+            compteur[mid] = compteur.get(mid, 0) + 1
+
+        top3 = sorted(compteur.items(), key=lambda x: x[1], reverse=True)[:3]
+
+        result = []
+        for media_id, count in top3:
+            media = next((m for m in _medias if m["id"] == media_id), None)
+            if media:
+                result.append(Statistique(media_id=media_id, titre=media["titre"], nombre_emprunts=count))
+        return result
 
 
 schema = strawberry.Schema(query=Query)
