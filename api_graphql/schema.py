@@ -36,3 +36,25 @@ class Emprunt:
     id: int
     media_id: int
     retourne: bool
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def medias(
+        self,
+        titre: Optional[str] = None,
+        auteur: Optional[str] = None,
+        disponible: Optional[bool] = None,
+    ) -> list[Media]:
+        resultat = _medias
+        if titre is not None:
+            resultat = [m for m in resultat if titre.lower() in m["titre"].lower()]
+        if auteur is not None:
+            resultat = [m for m in resultat if auteur.lower() in m["auteur"].lower()]
+        if disponible is not None:
+            resultat = [m for m in resultat if m["disponible"] == disponible]
+        return [Media(**m) for m in resultat]
+
+
+schema = strawberry.Schema(query=Query)
