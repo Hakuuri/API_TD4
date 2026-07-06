@@ -1,0 +1,29 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+interface/
+
+# --- Variables d'environnement & Secrets ---
+.env
+.secret
+secrets.toml
+
+# --- IDE & Éditeurs de code ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Tests & Coverage (Pour ta puce 16 bonus) ---
+.pytest_cache/
+.coverage
+htmlcov/
