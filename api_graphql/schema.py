@@ -80,4 +80,25 @@ class Query:
         return result
 
 
-schema = strawberry.Schema(query=Query)
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def demander_emprunt(self, media_id: int) -> Emprunt:
+        """
+        Choix d'implémentation : la mutation duplique la logique d'emprunt localement
+        plutôt que de déléguer à l'API REST, afin d'éviter le couplage réseau fort
+        entre services. À faire évoluer vers un bus d'événements partagé en production.
+        """
+        media = next((m for m in _medias if m["id"] == media_id), None)
+        if media is None:
+            raise ValueError(f"Média {media_id} introuvable")
+        if not media["disponible"]:
+            raise ValueError("Média déjà emprunté")
+
+        media["disponible"] = False
+        emprunt = {"id": len(_emprunts) + 1, "media_id": media_id, "retourne": False}
+        _emprunts.append(emprunt)
+        return Emprunt(**emprunt)
+
+
+schema = strawberry.Schema(query=Query, mutation=Mutation)
